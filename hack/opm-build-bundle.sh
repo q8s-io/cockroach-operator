@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright 2020 The Cockroach Authors
+# Copyright 2021 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -48,7 +48,6 @@ echo "PKG_MAN_OPTS: $PKG_MAN_OPTS"
 DEPLOY_PATH="deploy/certified-metadata-bundle/cockroach-operator"
 DEPLOY_CERTIFICATION_PATH="deploy/certified-metadata-bundle"
 cd ${DEPLOY_PATH} &&  "$opm" alpha bundle generate -d ./${VERSION}/ -u ./${VERSION}/ -c beta,stable -e stable
-cp ../annotations.yaml ./${VERSION}/metadata
 sed "s/VERSION/${VERSION}/g" ../bundle.Dockerfile > ./bundle-${VERSION}.Dockerfile
 cp ./bundle-${VERSION}.Dockerfile ./bundle.Dockerfile
 # Move to latest folder for release -> I need a fixed folder name for the docker image that runs from bazel

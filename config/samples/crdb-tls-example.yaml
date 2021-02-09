@@ -1,4 +1,4 @@
-# Copyright 2020 The Cockroach Authors
+# Copyright 2021 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,7 +26,4 @@ spec:
             storage: 10Gi
         volumeMode: Filesystem
   tlsEnabled: true
-  image:
-    name: RH_COCKROACH_DB_IMAGE_PLACEHOLDER
-    pullPolicy: Always
   nodes: 3

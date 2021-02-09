@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Cockroach Authors
+Copyright 2021 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -89,6 +89,8 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	cluster := resource.NewCluster(cr)
+	
+
 
 	// Save context cancellation function for actors to call if needed
 	ctx = actor.ContextWithCancelFn(ctx, cancel)

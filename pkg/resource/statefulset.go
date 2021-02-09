@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Cockroach Authors
+Copyright 2021 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -157,7 +157,7 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 			TerminationGracePeriodSeconds: ptr.Int64(60),
 			Containers:                    b.MakeContainers(),
 			AutomountServiceAccountToken:  ptr.Bool(false),
-			ServiceAccountName:            "cockroach-operator-sa",
+			ServiceAccountName:            "cockroach-database-sa",
 		},
 	}
 

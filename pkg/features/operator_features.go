@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Cockroach Authors
+Copyright 2021 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -39,6 +39,10 @@ const (
 	// beta: v1.0
 	// Decommission controls how the statefulset scales down
 	Decommission featuregate.Feature = "UseDecommission"
+	// alpha: v0.1
+	// beta: v1.0
+	// Upgrades controls upgrade mechanism
+	Upgrade featuregate.Feature = "Upgrade"
 )
 
 func init() {
@@ -49,6 +53,7 @@ func init() {
 // To add a new feature, define a key for it above and add it here. The features will be
 // available throughout Kubernetes binaries.
 var defaultOperatorFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
-	PartitionedUpdate: {Default: false, PreRelease: featuregate.Alpha},
-	Decommission:      {Default: false, PreRelease: featuregate.Alpha},
+	PartitionedUpdate: {Default: true, PreRelease: featuregate.Alpha},
+	Decommission:      {Default: true, PreRelease: featuregate.Alpha},
+	Upgrade:           {Default: false, PreRelease: featuregate.Alpha},
 }
