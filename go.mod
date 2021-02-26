@@ -17,6 +17,7 @@ require (
 	github.com/onsi/ginkgo v1.13.0
 	github.com/onsi/gomega v1.10.1
 	github.com/pkg/errors v0.9.1
+	github.com/q8s-io/iapetos v0.0.0-20210222094107-c402c41f40dd
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.5.1
 	go.uber.org/zap v1.14.1
@@ -35,6 +36,7 @@ require (
 )
 
 replace (
+	github.com/q8s-io/iapetos v0.0.0-20210222094107-c402c41f40dd => github.com/q8s-io/iapetos v0.0.0-20210225092935-0239e696661e
 	k8s.io/client-go v9.0.0+incompatible => k8s.io/client-go v0.18.5
 	sigs.k8s.io/controller-runtime v0.5.4 => sigs.k8s.io/controller-runtime v0.5.1-0.20200416234307-5377effd4043
 )

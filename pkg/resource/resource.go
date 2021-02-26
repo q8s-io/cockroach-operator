@@ -18,6 +18,7 @@ package resource
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
@@ -87,6 +88,7 @@ func (r Reconciler) Reconcile() (upserted bool, err error) {
 	current := r.Placeholder()
 
 	if err := r.Fetch(current); kube.IgnoreNotFound(err) != nil {
+		fmt.Println("----------",err.Error())
 		return false, err
 	}
 
@@ -182,11 +184,14 @@ type KubeFetcher struct {
 func (f KubeFetcher) Fetch(o runtime.Object) error {
 	accessor, err := meta.Accessor(o)
 	if err != nil {
+		fmt.Println("++++++++++",err.Error())
 		return err
 	}
 
 	err = f.Reader.Get(f.ctx, f.makeKey(accessor.GetName()), o)
-
+	if err!=nil{
+		fmt.Println("**********************",err.Error())
+	}
 	return err
 }
 

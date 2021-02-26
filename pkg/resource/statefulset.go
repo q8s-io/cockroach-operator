@@ -1,12 +1,9 @@
 /*
 Copyright 2021 The Cockroach Authors
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     https://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,21 +19,22 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cockroachdb/cockroach-operator/pkg/labels"
-	"github.com/cockroachdb/cockroach-operator/pkg/ptr"
-	appsv1 "k8s.io/api/apps/v1"
+	statefulpodv1 "github.com/q8s-io/iapetos/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/cockroachdb/cockroach-operator/pkg/labels"
+	"github.com/cockroachdb/cockroach-operator/pkg/ptr"
 )
 
 const (
 	httpPortName = "http"
 	grpcPortName = "grpc"
 
-	dataDirName      = "datadir"
-	dataDirMountPath = "/cockroach/cockroach-data/"
+	DataDirName      = "datadir"
+	DataDirMountPath = "/cockroach/cockroach-data/"
 
 	certsDirName = "certs"
 
@@ -51,43 +49,42 @@ type StatefulSetBuilder struct {
 }
 
 func (b StatefulSetBuilder) Build(obj runtime.Object) error {
-	ss, ok := obj.(*appsv1.StatefulSet)
+	// TODO use statefulPod
+	ss, ok := obj.(*statefulpodv1.StatefulPod)
 	if !ok {
-		return errors.New("failed to cast to StatefulSet object")
+		return errors.New("failed to cast to StatefulPod object")
 	}
 
 	if ss.ObjectMeta.Name == "" {
 		ss.ObjectMeta.Name = b.StatefulSetName()
 	}
-
-	ss.Spec = appsv1.StatefulSetSpec{
-		ServiceName: b.Cluster.DiscoveryServiceName(),
-		Replicas:    ptr.Int32(b.Spec().Nodes),
-		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
-			RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{},
-		},
-		PodManagementPolicy: appsv1.OrderedReadyPodManagement,
+	ss.Spec=statefulpodv1.StatefulPodSpec{
+		Size:            ptr.Int32(b.Spec().Nodes),
 		Selector: &metav1.LabelSelector{
-			MatchLabels: b.Selector,
+			MatchLabels:      b.Selector,
 		},
-		Template: b.makePodTemplate(),
+		PVRecyclePolicy: "Retain",
+		ServiceTemplate: nil,
+		PodTemplate:     b.makePodTemplate(),
+		PvcTemplate:     nil,
+		PVNames:         nil,
 	}
 
-	if err := b.Spec().DataStore.Apply(dataDirName, DbContainerName, dataDirMountPath, &ss.Spec,
+	if err := b.Spec().DataStore.Apply(DataDirName, DbContainerName, DataDirMountPath, &ss.Spec,
 		func(name string) metav1.ObjectMeta {
 			return metav1.ObjectMeta{
-				Name: dataDirName,
+				Name: DataDirName,
 			}
 		}); err != nil {
 		return err
 	}
 
 	if b.Spec().TLSEnabled {
-		if err := addCertsVolumeMount(DbContainerName, &ss.Spec.Template.Spec); err != nil {
+		if err := addCertsVolumeMount(DbContainerName, &ss.Spec.PodTemplate); err != nil {
 			return err
 		}
 
-		ss.Spec.Template.Spec.Volumes = append(ss.Spec.Template.Spec.Volumes, corev1.Volume{
+		ss.Spec.PodTemplate.Volumes = append(ss.Spec.PodTemplate.Volumes, corev1.Volume{
 			Name: certsDirName,
 			VolumeSource: corev1.VolumeSource{
 				Projected: &corev1.ProjectedVolumeSource{
@@ -141,24 +138,21 @@ func (b StatefulSetBuilder) Build(obj runtime.Object) error {
 }
 
 func (b StatefulSetBuilder) Placeholder() runtime.Object {
-	return &appsv1.StatefulSet{
+	return &statefulpodv1.StatefulPod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: b.StatefulSetName(),
 		},
 	}
 }
 
-func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
-	pod := corev1.PodTemplateSpec{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels: b.Selector,
-		},
-		Spec: corev1.PodSpec{
+func (b StatefulSetBuilder) makePodTemplate() corev1.PodSpec {
+	podSpec := corev1.PodSpec{
 			TerminationGracePeriodSeconds: ptr.Int64(60),
 			Containers:                    b.MakeContainers(),
 			AutomountServiceAccountToken:  ptr.Bool(false),
 			ServiceAccountName:            "cockroach-database-sa",
-		},
+			// TODO use subdomain
+			Subdomain: b.DiscoveryServiceName(),
 	}
 
 	secret := b.Spec().Image.PullSecret
@@ -167,10 +161,10 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 			Name: *secret,
 		}
 
-		pod.Spec.ImagePullSecrets = []corev1.LocalObjectReference{local}
+		podSpec.ImagePullSecrets = []corev1.LocalObjectReference{local}
 	}
 
-	return pod
+	return podSpec
 }
 
 // MakeContainers creates a slice of corev1.Containers which includes a single
@@ -314,7 +308,6 @@ func addCertsVolumeMount(container string, spec *corev1.PodSpec) error {
 		c := &spec.Containers[i]
 		if c.Name == container {
 			found = true
-
 			c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
 				Name:      certsDirName,
 				MountPath: "/cockroach/cockroach-certs/",
@@ -329,3 +322,7 @@ func addCertsVolumeMount(container string, spec *corev1.PodSpec) error {
 
 	return nil
 }
+
+/*func addService()*corev1.ServiceSpec{
+
+}*/

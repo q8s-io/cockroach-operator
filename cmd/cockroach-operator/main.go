@@ -22,6 +22,7 @@ import (
 	"os"
 
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
+	statefulpodv1 "github.com/q8s-io/iapetos/api/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
@@ -43,12 +44,13 @@ var (
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = crdbv1alpha1.AddToScheme(scheme)
+	_=statefulpodv1.AddToScheme(scheme)
 }
 
 func main() {
 	var metricsAddr, featureGatesString string
 	var enableLeaderElection bool
-	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
+	flag.StringVar(&metricsAddr, "metrics-addr", ":8081", "The address the metric endpoint binds to.")
 	flag.StringVar(&featureGatesString, "feature-gates", "", "Feature gate to enable, format is a command separated list enabling features, for instance RunAsNonRoot=false")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
@@ -66,15 +68,15 @@ func main() {
 		}
 	}
 
-	namespace, err := GetWatchNamespace()
-	if err != nil {
+	//namespace, err := GetWatchNamespace()
+	/*if err != nil {
 		setupLog.Error(err, "unable to get watch namespace")
 		os.Exit(1)
-	}
+	}*/
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
-		Namespace:          namespace,
+		//Namespace:          namespace,
 		MetricsBindAddress: metricsAddr,
 		LeaderElection:     enableLeaderElection,
 		Port:               9443,

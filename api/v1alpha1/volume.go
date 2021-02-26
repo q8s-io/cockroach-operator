@@ -20,13 +20,13 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	appsv1 "k8s.io/api/apps/v1"
+	statefulpodv1 "github.com/q8s-io/iapetos/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (v *Volume) Apply(name string, container string, path string,
-	spec *appsv1.StatefulSetSpec, metaMutator func(name string) metav1.ObjectMeta) error {
+	spec *statefulpodv1.StatefulPodSpec, metaMutator func(name string) metav1.ObjectMeta) error {
 	sourcesNum := sourcesSet(v)
 	if sourcesNum > 1 {
 		return errors.New("one of HostPath, EmptyDir or VolumeClaim should be set")
@@ -36,12 +36,12 @@ func (v *Volume) Apply(name string, container string, path string,
 		return errors.New("no valid Volume source provided")
 	}
 
-	if err := v.applyToPod(name, container, path, &spec.Template.Spec); err != nil {
+	if err := v.applyToPod(name, container, path, &spec.PodTemplate); err != nil {
 		return err
 	}
 
 	if v.VolumeClaim != nil {
-		if spec.VolumeClaimTemplates == nil {
+		/*if spec.PodTemplate.VolumeClaimTemplates == nil {
 			spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{}
 		}
 
@@ -53,7 +53,9 @@ func (v *Volume) Apply(name string, container string, path string,
 			//},
 		}
 
-		spec.VolumeClaimTemplates = append(spec.VolumeClaimTemplates, pvc)
+		spec.VolumeClaimTemplates = append(spec.VolumeClaimTemplates, pvc)*/
+		pvcSpec:=v.VolumeClaim.PersistentVolumeClaimSpec
+		spec.PvcTemplate=&pvcSpec
 	}
 
 	return nil
