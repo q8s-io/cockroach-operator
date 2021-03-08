@@ -1,0 +1,26 @@
+apiVersion: crdb.cockroachlabs.com/v1alpha1
+kind: CrdbCluster
+metadata:
+  name: cockroachdb
+spec:
+  dataStore:
+    pvc:
+      spec:
+        storageClassName: "kubevirt-hostpath-provisioner"
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: "60Gi"
+        volumeMode: Filesystem
+  resources:
+    requests:
+      cpu: "2"
+      memory: "2Gi"
+    limits:
+      cpu: "2"
+      memory: "2Gi"
+  tlsEnabled: true
+  image:
+    name: uhub.service.ucloud.cn/infra/cockroach:v20.2.5
+  nodes: 3
