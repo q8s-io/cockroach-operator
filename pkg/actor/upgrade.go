@@ -30,7 +30,8 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/pkg/errors"
-	appsv1 "k8s.io/api/apps/v1"
+	statefulpodv1 "github.com/q8s-io/iapetos/api/v1"
+	//appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
@@ -65,7 +66,7 @@ func (up *upgrade) Act(ctx context.Context, cluster *resource.Cluster) error {
 		Namespace: cluster.Namespace(),
 		Name:      stsName,
 	}
-	statefulSet := &appsv1.StatefulSet{}
+	statefulSet := &statefulpodv1.StatefulPod{}
 	if err := up.client.Get(ctx, key, statefulSet); err != nil {
 		return errors.Wrap(err, "failed to fetch statefulset")
 	}
@@ -74,7 +75,7 @@ func (up *upgrade) Act(ctx context.Context, cluster *resource.Cluster) error {
 		return NotReadyErr{Err: errors.New("statefulset is updating, waiting for the update to finish")}
 	}
 
-	dbContainer, err := kube.FindContainer(resource.DbContainerName, &statefulSet.Spec.Template.Spec)
+	dbContainer, err := kube.FindContainer(resource.DbContainerName, &statefulSet.Spec.PodTemplate)
 	if err != nil {
 		return err
 	}
@@ -119,7 +120,7 @@ func (up *upgrade) Act(ctx context.Context, cluster *resource.Cluster) error {
 	}
 
 	update := statefulSet.DeepCopy()
-	updatedContainer, _ := kube.FindContainer(resource.DbContainerName, &update.Spec.Template.Spec)
+	updatedContainer, _ := kube.FindContainer(resource.DbContainerName, &update.Spec.PodTemplate)
 	updatedContainer.Image = cluster.Spec().Image.Name
 
 	if err := up.client.Update(ctx, update); err != nil {
@@ -192,16 +193,19 @@ func (up *upgrade) showClusterSetting(cluster *resource.Cluster, setting string)
 	return csv.NewReader(strings.NewReader(stdout)).ReadAll()
 }
 
-func statefulSetIsUpdating(ss *appsv1.StatefulSet) bool {
-	if ss.Status.ObservedGeneration == 0 {
+func statefulSetIsUpdating(ss *statefulpodv1.StatefulPod) bool {
+	/*if ss.Status.ObservedGeneration == 0 {
 		return false
 	}
 
 	if ss.Status.CurrentRevision != ss.Status.UpdateRevision {
 		return true
-	}
+	}*/
 
-	if ss.Generation > ss.Status.ObservedGeneration && *ss.Spec.Replicas == ss.Status.Replicas {
+	/*if ss.Generation > ss.Status.ObservedGeneration && *ss.Spec.Replicas == ss.Status.Replicas {
+		return true
+	}*/
+	if int(*ss.Spec.Size)!=len(ss.Status.PodStatusMes){
 		return true
 	}
 

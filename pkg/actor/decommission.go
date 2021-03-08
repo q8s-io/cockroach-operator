@@ -20,6 +20,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
+	statefulpodv1 "github.com/q8s-io/iapetos/api/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	kubetypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/clustersql"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
@@ -29,13 +37,6 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/scale"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
-	"github.com/pkg/errors"
-	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	kubetypes "k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func newDecommission(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
@@ -66,14 +67,14 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 		Namespace: cluster.Namespace(),
 		Name:      stsName,
 	}
-	ss := &appsv1.StatefulSet{}
+	ss := &statefulpodv1.StatefulPod{}
 	if err := d.client.Get(ctx, key, ss); err != nil {
 		log.Info("decommission failed to fetch statefulset")
 		return kube.IgnoreNotFound(err)
 	}
 	status := &ss.Status
 
-	if status.CurrentReplicas == 0 || status.CurrentReplicas < status.Replicas {
+	if len(status.PodStatusMes) == 0 || len(status.PodStatusMes) < int(*ss.Spec.Size) {
 		log.Info(" decommission statefulset does not have all replicas up")
 		return NotReadyErr{Err: errors.New("decommission statefulset does not have all replicas up")}
 	}
@@ -85,8 +86,8 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 		log.Info("We cannot decommission if there are less than 3 nodes", "nodes", nodes)
 		return errors.New("decommission with less than 3 nodes is not supported")
 	}
-	log.Info("replicas decommisioning", "status.CurrentReplicas", status.CurrentReplicas, "expected", cluster.Spec().Nodes)
-	if status.CurrentReplicas <= cluster.Spec().Nodes {
+	log.Info("replicas decommisioning", "status.CurrentReplicas", len(status.PodStatusMes), "expected", cluster.Spec().Nodes)
+	if int32(len(status.PodStatusMes)) <= cluster.Spec().Nodes {
 		return nil
 	}
 	clientset, err := kubernetes.NewForConfig(d.config)
@@ -162,7 +163,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 	}
 	// TO DO @alina we will need to save the status foreach action
 	cluster.SetTrue(api.DecommissionCondition)
-	log.Info("decommission completed", "cond", ss.Status.Conditions)
+	log.Info("decommission completed", "cond", ss.Status.PodStatusMes)
 	CancelLoop(ctx)
 	return nil
 }

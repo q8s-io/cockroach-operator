@@ -100,7 +100,7 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 		Scheme: d.scheme,
 	}).Reconcile()
 	if err != nil {
-		return errors.Wrap(err, "failed to reconcile statefulset")
+		return errors.Wrap(err, "failed to reconcile statefulsetPod")
 	}
 
 	if changed {

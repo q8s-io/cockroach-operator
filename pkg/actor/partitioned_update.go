@@ -22,21 +22,23 @@ import (
 	"os"
 	"time"
 
+	statefulpodv1 "github.com/q8s-io/iapetos/api/v1"
+
 	"github.com/cockroachdb/cockroach-operator/pkg/database"
 
 	"github.com/Masterminds/semver/v3"
-	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
-	"github.com/cockroachdb/cockroach-operator/pkg/condition"
-	"github.com/cockroachdb/cockroach-operator/pkg/kube"
-	"github.com/cockroachdb/cockroach-operator/pkg/resource"
-	"github.com/cockroachdb/cockroach-operator/pkg/update"
 	"github.com/pkg/errors"
-	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
+	"github.com/cockroachdb/cockroach-operator/pkg/condition"
+	"github.com/cockroachdb/cockroach-operator/pkg/kube"
+	"github.com/cockroachdb/cockroach-operator/pkg/resource"
+	"github.com/cockroachdb/cockroach-operator/pkg/update"
 )
 
 func newPartitionedUpdate(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
@@ -74,13 +76,13 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 		Namespace: cluster.Namespace(),
 		Name:      stsName,
 	}
-	statefulSet := &appsv1.StatefulSet{}
+	statefulSet := &statefulpodv1.StatefulPod{}
 	if err := up.client.Get(ctx, key, statefulSet); err != nil {
-		return errors.Wrap(err, "failed to fetch statefulset")
+		return errors.Wrap(err, "failed to fetch statefulsetPod")
 	}
 
 	if statefulSetIsUpdating(statefulSet) {
-		return NotReadyErr{Err: errors.New("statefulset is updating, waiting for the update to finish")}
+		return NotReadyErr{Err: errors.New("statefulsetPod is updating, waiting for the update to finish")}
 	}
 
 	// TODO we are relying on the container name for more than one purpose
@@ -88,7 +90,7 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 	// We need to have it not tell us the version
 	// See https://github.com/cockroachdb/cockroach-operator/issues/200
 
-	dbContainer, err := kube.FindContainer(resource.DbContainerName, &statefulSet.Spec.Template.Spec)
+	dbContainer, err := kube.FindContainer(resource.DbContainerName, &statefulSet.Spec.PodTemplate)
 	if err != nil {
 		return err
 	}

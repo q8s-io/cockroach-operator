@@ -21,16 +21,17 @@ import (
 	"fmt"
 	"strings"
 
-	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
-	"github.com/cockroachdb/cockroach-operator/pkg/condition"
-	"github.com/cockroachdb/cockroach-operator/pkg/kube"
-	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/pkg/errors"
-	appsv1 "k8s.io/api/apps/v1"
+	statefulpodv1 "github.com/q8s-io/iapetos/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
+	"github.com/cockroachdb/cockroach-operator/pkg/condition"
+	"github.com/cockroachdb/cockroach-operator/pkg/kube"
+	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 )
 
 func newInitialize(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
@@ -52,6 +53,7 @@ func (init initialize) Handles(conds []api.ClusterCondition) bool {
 }
 
 func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error {
+
 	log := init.log.WithValues("CrdbCluster", cluster.ObjectKey())
 	log.Info("initializing CockroachDB")
 
@@ -61,15 +63,15 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 		Namespace: cluster.Namespace(),
 		Name:      stsName,
 	}
-	ss := &appsv1.StatefulSet{}
+	ss := &statefulpodv1.StatefulPod{}
 	if err := init.client.Get(ctx, key, ss); err != nil {
 		log.Info("failed to fetch statefulset")
 		return kube.IgnoreNotFound(err)
 	}
 
-	status := &ss.Status
+	size:=int(*ss.Spec.Size)
 
-	if status.CurrentReplicas == 0 || status.CurrentReplicas < status.Replicas {
+	if len(ss.Status.PodStatusMes) == 0 || len(ss.Status.PodStatusMes) < size {
 		log.Info("statefulset does not have all replicas up")
 		return NotReadyErr{Err: errors.New("statefulset does not have all replicas up")}
 	}
@@ -79,10 +81,10 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 		"-c",
 		">- /cockroach/cockroach init " + cluster.SecureMode(),
 	}
-
+	fmt.Println("---------cmd begin------")
 	_, stderr, err := kube.ExecInPod(init.scheme, init.config, cluster.Namespace(),
 		fmt.Sprintf("%s-0", stsName), resource.DbContainerName, cmd)
-
+	fmt.Println("---------cmd end---------")
 	if err != nil && !alreadyInitialized(stderr) {
 		// can happen if container has not finished its startup
 		if strings.Contains(err.Error(), "unable to upgrade connection: container not found") ||

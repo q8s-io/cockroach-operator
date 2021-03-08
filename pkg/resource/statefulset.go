@@ -63,13 +63,12 @@ func (b StatefulSetBuilder) Build(obj runtime.Object) error {
 		Selector: &metav1.LabelSelector{
 			MatchLabels:      b.Selector,
 		},
-		PVRecyclePolicy: "Retain",
+		PVRecyclePolicy: "Delete",
 		ServiceTemplate: nil,
 		PodTemplate:     b.makePodTemplate(),
-		PvcTemplate:     nil,
+		PVCTemplate:     nil,
 		PVNames:         nil,
 	}
-
 	if err := b.Spec().DataStore.Apply(DataDirName, DbContainerName, DataDirMountPath, &ss.Spec,
 		func(name string) metav1.ObjectMeta {
 			return metav1.ObjectMeta{
@@ -83,7 +82,6 @@ func (b StatefulSetBuilder) Build(obj runtime.Object) error {
 		if err := addCertsVolumeMount(DbContainerName, &ss.Spec.PodTemplate); err != nil {
 			return err
 		}
-
 		ss.Spec.PodTemplate.Volumes = append(ss.Spec.PodTemplate.Volumes, corev1.Volume{
 			Name: certsDirName,
 			VolumeSource: corev1.VolumeSource{
@@ -133,7 +131,8 @@ func (b StatefulSetBuilder) Build(obj runtime.Object) error {
 			},
 		})
 	}
-
+	fmt.Printf("--------------%+v\n",ss)
+		//ss.Status=statefulpodv1.StatefulPodStatus{}
 	return nil
 }
 
@@ -242,13 +241,13 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 	}
 }
 
-func (b StatefulSetBuilder) secureMode() string {
-	if b.Spec().TLSEnabled {
-		return " --certs-dir=/cockroach/cockroach-certs/"
-	}
-
-	return " --insecure"
-}
+// func (b StatefulSetBuilder) secureMode() string {
+// 	if b.Spec().TLSEnabled {
+// 		return " --certs-dir=/cockroach/cockroach-certs/"
+// 	}
+//
+// 	return " --insecure"
+// }
 
 func (b StatefulSetBuilder) probeScheme() corev1.URIScheme {
 	if b.Spec().TLSEnabled {

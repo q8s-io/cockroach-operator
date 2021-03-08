@@ -118,6 +118,7 @@ func (cluster Cluster) Domain() string {
 }
 
 func (cluster Cluster) SecureMode() string {
+	fmt.Println("------------TLSEnabled-------",cluster.Spec().TLSEnabled)
 	if cluster.Spec().TLSEnabled {
 		return "--certs-dir=/cockroach/cockroach-certs/"
 	}

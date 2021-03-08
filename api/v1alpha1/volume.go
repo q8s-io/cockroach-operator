@@ -55,7 +55,7 @@ func (v *Volume) Apply(name string, container string, path string,
 
 		spec.VolumeClaimTemplates = append(spec.VolumeClaimTemplates, pvc)*/
 		pvcSpec:=v.VolumeClaim.PersistentVolumeClaimSpec
-		spec.PvcTemplate=&pvcSpec
+		spec.PVCTemplate=&pvcSpec
 	}
 
 	return nil

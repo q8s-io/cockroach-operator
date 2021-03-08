@@ -20,8 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cockroachdb/cockroach-operator/pkg/kube"
-	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,6 +27,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/cockroachdb/cockroach-operator/pkg/kube"
+	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 )
 
 // Builder populates a given Kubernetes resource or creates its default instance (placeholder)
@@ -98,19 +99,18 @@ func (r Reconciler) Reconcile() (upserted bool, err error) {
 		if err := r.Build(current); err != nil {
 			return err
 		}
-
 		if err := r.reconcileLabels(original, current); err != nil {
 			return errors.Wrap(err, "failed to reconcile labels")
 		}
-
+		fmt.Println("----------------------Lable")
 		if err := r.reconcileAnnotations(original, current); err != nil {
 			return errors.Wrap(err, "failed to reconcile annotations")
 		}
-
+		fmt.Println("----------------------Annotation")
 		if err := r.ensureIsOwned(current); err != nil {
 			return errors.Wrap(err, "failed to set object ownership")
 		}
-
+		fmt.Println("----------------------Ownerd")
 		return nil
 	})
 }
@@ -221,9 +221,10 @@ type KubePersister struct {
 
 func (p KubePersister) Persist(obj runtime.Object, mutateFn func() error) (upserted bool, err error) {
 	if err := addNamespace(obj, p.namespace); err != nil {
+		fmt.Println("---------------------namespace error",)
 		return false, err
 	}
-
+	fmt.Println("-----------------------------------------------------")
 	return p.persistFn(p.ctx, p.Client, obj, mutateFn)
 }
 
