@@ -58,6 +58,13 @@ func (b StatefulSetBuilder) Build(obj runtime.Object) error {
 	if ss.ObjectMeta.Name == "" {
 		ss.ObjectMeta.Name = b.StatefulSetName()
 	}
+	if ss.Annotations!=nil{
+		ss.Annotations["cockrochDB"]="true"
+	}else {
+		ss.Annotations= map[string]string{
+			"cockrochDB":"true",
+		}
+	}
 	ss.Spec=statefulpodv1.StatefulPodSpec{
 		Size:            ptr.Int32(b.Spec().Nodes),
 		Selector: &metav1.LabelSelector{
@@ -148,8 +155,9 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodSpec {
 	podSpec := corev1.PodSpec{
 			TerminationGracePeriodSeconds: ptr.Int64(60),
 			Containers:                    b.MakeContainers(),
-			AutomountServiceAccountToken:  ptr.Bool(false),
+			AutomountServiceAccountToken:  ptr.Bool(true),
 			ServiceAccountName:            "cockroach-database-sa",
+
 			// TODO use subdomain
 			Subdomain: b.DiscoveryServiceName(),
 	}
