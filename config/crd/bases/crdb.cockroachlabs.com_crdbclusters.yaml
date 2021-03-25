@@ -55,6 +55,10 @@ spec:
           description: CrdbClusterSpec defines the desired state of a CockroachDB
             Cluster that the operator maintains.
           properties:
+            pvRecyclePolicy:
+              description: PersistentVolumeReclaimPolicy describes a policy for end-of-life
+                maintenance of persistent volumes.
+              type: string
             additionalArgs:
               description: '(Optional) Additional command line arguments for the `cockroach`
                 binary Default: ""'

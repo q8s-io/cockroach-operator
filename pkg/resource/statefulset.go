@@ -70,7 +70,7 @@ func (b StatefulSetBuilder) Build(obj runtime.Object) error {
 		Selector: &metav1.LabelSelector{
 			MatchLabels:      b.Selector,
 		},
-		PVRecyclePolicy: "Delete",
+		PVRecyclePolicy: b.Spec().PVRecyclePolicy,
 		ServiceTemplate: nil,
 		PodTemplate:     b.makePodTemplate(),
 		PVCTemplate:     nil,

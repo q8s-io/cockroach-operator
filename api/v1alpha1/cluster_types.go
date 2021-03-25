@@ -37,6 +37,8 @@ type CrdbClusterSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Cockroach Database Image"
 	// +optional
 	Image PodImage `json:"image"`
+	// Default: Delete
+	PVRecyclePolicy corev1.PersistentVolumeReclaimPolicy `json:"pvRecyclePolicy,omitempty"`
 	// (Optional) The database port (`--port` CLI parameter when starting the service)
 	// Default: 26257
 	// +optional
