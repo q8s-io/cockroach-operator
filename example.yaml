@@ -3,6 +3,7 @@ kind: CrdbCluster
 metadata:
   name: cockroachdb
 spec:
+  pvRecyclePolicy: Retain
   dataStore:
     pvc:
       spec:

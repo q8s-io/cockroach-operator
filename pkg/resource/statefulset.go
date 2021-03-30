@@ -74,7 +74,7 @@ func (b StatefulSetBuilder) Build(obj runtime.Object) error {
 		ServiceTemplate: nil,
 		PodTemplate:     b.makePodTemplate(),
 		PVCTemplate:     nil,
-		PVNames:         nil,
+		PVNames:         b.Spec().PVNames,
 	}
 	if err := b.Spec().DataStore.Apply(DataDirName, DbContainerName, DataDirMountPath, &ss.Spec,
 		func(name string) metav1.ObjectMeta {

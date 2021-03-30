@@ -57,7 +57,6 @@ func (v *Volume) Apply(name string, container string, path string,
 		pvcSpec:=v.VolumeClaim.PersistentVolumeClaimSpec
 		spec.PVCTemplate=&pvcSpec
 	}
-
 	return nil
 }
 

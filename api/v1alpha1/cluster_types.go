@@ -39,6 +39,7 @@ type CrdbClusterSpec struct {
 	Image PodImage `json:"image"`
 	// Default: Delete
 	PVRecyclePolicy corev1.PersistentVolumeReclaimPolicy `json:"pvRecyclePolicy,omitempty"`
+	PVNames         []string                             `json:"pvNames,omitempty"`
 	// (Optional) The database port (`--port` CLI parameter when starting the service)
 	// Default: 26257
 	// +optional
