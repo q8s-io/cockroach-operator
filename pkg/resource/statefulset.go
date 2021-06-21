@@ -160,6 +160,7 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodSpec {
 
 			// TODO use subdomain
 			Subdomain: b.DiscoveryServiceName(),
+			Affinity: b.Spec().Affinity,
 	}
 
 	secret := b.Spec().Image.PullSecret
